@@ -1,0 +1,101 @@
+!!! 5
+%html
+	%title= @patch_name
+	%script{:src => 'https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js'}
+	%script{:src => 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.6/jquery-ui.js'}
+	%script{:src => 'js/raphael.js'}
+
+	%style{:type => "text/css", :media => "screen"}
+		:plain
+			#patch {
+				background-color: #888888
+			}
+
+
+	:javascript
+
+		Raphael.fn.cycle = function(posX,posY) {
+			var color = 'turquoise';	
+			this.text(posX + 22, posY + 8, 'cycle~').attr({
+				cursor: "move",
+				"class": "cycleText"
+			});
+			return this.rect(posX,posY, 45, 20, 6).attr({
+				fill: color, 
+				stroke: color, 
+				"fill-opacity": 0, 
+				"stroke-width": 2, 
+				cursor: "move"
+			});
+		}
+	
+		Raphael.fn.drawGrid = function () {
+			for (var x = 0.5; x < 500; x += 10) { 
+				var path = this.path('M' + x + ' 0L' + x + ' 375');
+				path.attr('stroke', '#ccc');
+			}
+			for (var y = 0.5; y < 375; y += 10) {
+				this.path('M0 ' + y + 'L500 ' + y); 
+				path.attr('stroke', '#ccc');
+			}
+		}
+
+		$(function() { 
+		
+			var r = Raphael('patch', 500, 375);
+			var objectTypes = ["cycle~", "dac~", "message"];
+			var id = 0;
+			var objectInitializers = new Array();
+		
+			objectInitializers["cycle~"] = function(element) {
+				var cycle = r.cycle(element.offsetLeft, element.offsetTop);	
+				var cycleId = element.id.replace('newobject','cycle');
+				cycle.node.id = cycleId;
+				$('#' + cycleId).bind('click', function() {
+					alert('User clicked on "foo."');
+				});
+				$('#' + element.id).remove();
+			};
+
+			function createObject(event, ui) {
+				objectInitializers[event.target.value](event.target);
+			}
+	
+			function addObject(e) {
+				var objectId = 'newobject_' + (id++);
+				var object = '#' + objectId
+				$(document.body).append( 
+					$('<input id="OBJECT_ID" type="text"/>'.replace("OBJECT_ID", objectId)).css({
+						'position':'absolute',
+						'background-color':'#ff00ff',
+						top: e.pageY,   //offsets
+						left: e.pageX   //offsets
+					}));
+				$(object).autocomplete({
+					source: objectTypes,
+					select: function(event, ui) { 
+						createObject(event, ui);	
+					}
+				});
+				$(object).focus();
+
+			}
+
+			move = function (dx, dy) {
+				var att = this.type == "rect" ? {x: this.ox + dx, y: this.oy + dy} : {cx: this.ox + dx, cy: this.oy + dy};
+				this.attr(att);
+				r.safari();
+			}
+
+
+			var context = new AudioContext();
+			//r.drawGrid();	
+			r.cycle(40,40);	
+			$('#patch').bind('click', addObject );
+		});
+		
+
+	%body
+		%div#patch
+		/
+			%canvas{:id => "patch", :width => "500", :height => "375"}	
